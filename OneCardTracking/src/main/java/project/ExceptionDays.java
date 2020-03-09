@@ -1,21 +1,22 @@
 package project;
 
-import java.time.LocalDate;
+import org.joda.time.Days;
+import org.joda.time.LocalDate;
 
 public class ExceptionDays implements Comparable<ExceptionDays>{
 	LocalDate startDate;
 	LocalDate endDate;
 	
-	ExceptionDays(LocalDate start, LocalDate end){
-		this.startDate = start;
-		this.endDate = end;
-		if(start.isAfter(end)) {
+	ExceptionDays(LocalDate localDate, LocalDate localDate2){
+		this.startDate = localDate;
+		this.endDate = localDate2;
+		if(localDate.isAfter(localDate2)) {
 			throw new IllegalArgumentException();
 		}
 	}
 	
 	public int rangeAmount() {
-		return this.startDate.until(this.endDate).getDays();
+		return Days.daysBetween(startDate, endDate).getDays();
 	}
 
 	public int compareTo(ExceptionDays o) {

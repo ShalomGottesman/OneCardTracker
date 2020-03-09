@@ -2,8 +2,9 @@ package project;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDate;
 import java.util.ArrayList;
+
+import org.joda.time.LocalDate;
 
 public class DaySummery implements Comparable<DaySummery>{
 	ArrayList<Transaction> transactions;
@@ -34,7 +35,7 @@ public class DaySummery implements Comparable<DaySummery>{
 	public int compareTo(DaySummery o) {
 		System.out.println("comp");
 		if(this.date.getYear() == o.date.getYear()) {
-			if(this.date.getMonthValue() == o.date.getMonthValue()) {
+			if(this.date.getMonthOfYear() == o.date.getMonthOfYear()) {
 				if(this.date.getDayOfMonth() == o.date.getDayOfMonth()) {
 					return 0;
 				} else if (this.date.getDayOfMonth() < o.date.getDayOfMonth()) {
@@ -43,12 +44,12 @@ public class DaySummery implements Comparable<DaySummery>{
 					return 1;
 				}
 				
-			} else if(this.date.getMonthValue() < o.date.getMonthValue()) {
+			} else if(this.date.getMonthOfYear() < o.date.getMonthOfYear()) {
 				return -1;
 			} else {
 				return 1;
 			}
-		} else if (this.date.getYear() < o.date.getMonthValue()) {
+		} else if (this.date.getYear() < o.date.getMonthOfYear()) {
 			return -1;
 		} else {
 			return 1;
