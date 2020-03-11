@@ -50,6 +50,8 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
+import org.openqa.selenium.phantomjs.PhantomJSDriver;
 
 import utils.IDs;
 
@@ -62,18 +64,19 @@ public class Main {
 	
 	public static void main(String[] args) throws IOException {
 		exceptionSet.add(new ExceptionDays(LocalDate.parse("2020-04-07"), LocalDate.parse("2020-04-18")));//pesach
-		exceptionSet.add(new ExceptionDays(LocalDate.parse("2020-04-25"), LocalDate.parse("2020-04-29")));//pesach
+		//exceptionSet.add(new ExceptionDays(LocalDate.parse("2020-04-25"), LocalDate.parse("2020-04-29")));//dummy
 		
 		Scanner sc = new Scanner(System.in);
 		System.out.println("password:");
 		//String password = sc.nextLine();
 		String password = "";
 		sc.close();
-		String path = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator;
-		System.setProperty("webdriver.chrome.driver", path + "chromedriver.exe");
-		
+		String path = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "windows" + File.separator;
+		System.setProperty("webdriver.chrome.driver", path + "chrome" + File.separator + "chromedriver80.exe");
+		System.setProperty("phantomjs.binary.path", path + "phantomjs.exe");
+		WebDriver driver = new PhantomJSDriver();
 		//WebDriver driver = new HtmlUnitDriver();
-		WebDriver driver = new ChromeDriver();
+		//WebDriver driver = new ChromeDriver();
 		driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
 		driver.get(IDs.logInURL);
 		driver.findElement(By.id(IDs.logIn_usernameID)).sendKeys("sgottes1");
@@ -174,14 +177,15 @@ public class Main {
 		Row infoStart = getRow(sheet, 1);
 		Cell cell = infoStart.createCell(0);
 		cell.setCellStyle(dateStyle);
-		cell.setCellFormula("DATE("+startingDate.getYear()+", "+startingDate.getMonthOfYear()+", "+startingDate.getDayOfMonth()+")-1");
+		cell.setCellFormula(dateToDateFormula(startingDate)+"-1");
 		Cell priceCellInfo = infoStart.createCell(1);
 		Cell balanceCellInfo = infoStart.createCell(2);
 		priceCellInfo.setCellValue(0);
 		balanceCellInfo.setCellValue(balanceDouble);
 		double balanceDoubleCopy = balanceDouble;
 		/* write all transactions */
-		for(int y = 0; y < summeryAry.length; y++) {
+		int y = 0;
+		for(y = 0; y < summeryAry.length; y++) {
 			Row row = getRow(sheet, y+2);
 			Cell dateCell = row.createCell(0);
 			//dateCell.setCellStyle(dateStyle);
@@ -193,15 +197,20 @@ public class Main {
 			priceCell.setCellValue(summeryAry[y].summery());
 			balanceCell.setCellValue(balanceDouble+=summeryAry[y].summery());
 		}
+		/*write current date and balance */
+		getCell(getRow(sheet, y+2),0).setCellStyle(dateStyle);
+		getCell(getRow(sheet, y+2),0).setCellFormula(dateToDateFormula(LocalDate.now()));//set to today
+		getCell(getRow(sheet, y+2),1).setCellValue(0);
+		getCell(getRow(sheet, y+2),2).setCellValue(balanceDouble);
 		
 		/*write origional base without exception days */
-		getRow(sheet, 1).createCell(4).setCellFormula(dateToDateFormula(startingDate)+"-1");
+		getCell(getRow(sheet, 1),4).setCellFormula(dateToDateFormula(startingDate)+"-1");
 		applyDateFormatting(sheet, 1, 4, dateStyle);
-		getRow(sheet, 1).createCell(5).setCellValue(balanceDoubleCopy);
-		getRow(sheet, 1).createCell(6).setCellFormula("E3-E2");//total day range
-		getRow(sheet, 2).createCell(4).setCellFormula(dateToDateFormula(endingDate));
+		getCell(getRow(sheet, 1),5).setCellValue(balanceDoubleCopy);
+		getCell(getRow(sheet, 1),6).setCellFormula("E3-E2");//total day range
+		getCell(getRow(sheet, 2),4).setCellFormula(dateToDateFormula(endingDate));
 		applyDateFormatting(sheet, 2, 4, dateStyle);
-		getRow(sheet, 2).createCell(5).setCellValue(0);
+		getCell(getRow(sheet, 2),5).setCellValue(0);
 		
 		/*write all exception days*/
 		exceptionSet = verifyRanges(exceptionSet);
@@ -219,15 +228,15 @@ public class Main {
 		getRow(sheet, 1).createCell(12).setCellFormula("SUM(K2:K"+ (2+exceptionDaysRange.length)+")");
 		
 		/*calculate average spending allowance with exception days */
-		getRow(sheet, 4).createCell(4).setCellValue("Total Days");
-		getRow(sheet, 4).createCell(5).setCellValue("Average Allowance");
-		getRow(sheet, 5).createCell(4).setCellFormula("G2-M2");
-		getRow(sheet, 5).createCell(5).setCellFormula("F2/E6");
+		getCell(getRow(sheet, 4), 4).setCellValue("Total Days");
+		getCell(getRow(sheet, 4), 5).setCellValue("Average Allowance");
+		getCell(getRow(sheet, 5), 4).setCellFormula("G2-M2");
+		getCell(getRow(sheet, 5), 5).setCellFormula("F2/E6");
 		
 		/*recalculate baseline with exception days*/
-		getRow(sheet, 7).createCell(4).setCellValue("Augmented Base");
-		getRow(sheet, 8).createCell(4).setCellValue("Date");
-		getRow(sheet, 8).createCell(5).setCellValue("Balance");
+		getCell(getRow(sheet, 7), 4).setCellValue("Augmented Base");
+		getCell(getRow(sheet, 8), 4).setCellValue("Date");
+		getCell(getRow(sheet, 8), 5).setCellValue("Balance");
 		
 		getRow(sheet, 9).createCell(4).setCellFormula(dateToDateFormula(startingDate)+"-1");
 		applyDateFormatting(sheet, 9, 4, dateStyle);
@@ -265,8 +274,8 @@ public class Main {
         leftAxis.setTitle("Balance");
         leftAxis.setCrosses(AxisCrosses.AUTO_ZERO);
         
-        XDDFDataSource<Double> xs1 = XDDFDataSourcesFactory.fromNumericCellRange((XSSFSheet) sheet, new CellRangeAddress(1, 1+summeryAry.length, 0, 0));
-        XDDFNumericalDataSource<Double> ys1 = XDDFDataSourcesFactory.fromNumericCellRange((XSSFSheet) sheet, new CellRangeAddress(1, 1+summeryAry.length, 2, 2));
+        XDDFDataSource<Double> xs1 = XDDFDataSourcesFactory.fromNumericCellRange((XSSFSheet) sheet, new CellRangeAddress(1, 1+summeryAry.length+1, 0, 0));
+        XDDFNumericalDataSource<Double> ys1 = XDDFDataSourcesFactory.fromNumericCellRange((XSSFSheet) sheet, new CellRangeAddress(1, 1+summeryAry.length+1, 2, 2));
         
         XDDFDataSource<Double> xs2 = XDDFDataSourcesFactory.fromNumericCellRange((XSSFSheet) sheet, new CellRangeAddress(9, 9+(2*exceptionDaysRange.length)+1, 4, 4));
         XDDFNumericalDataSource<Double> ys2 = XDDFDataSourcesFactory.fromNumericCellRange((XSSFSheet) sheet, new CellRangeAddress(9, 9+(2*exceptionDaysRange.length)+1, 5, 5));
@@ -324,6 +333,14 @@ public class Main {
 		if (temp == null) {
 			temp = sheet.createRow(row);
 		}
+		return temp;
+	}
+	
+	private static Cell getCell(Row row, int col) {
+		Cell temp = row.getCell(col);
+			if (temp == null) {
+				temp = row.createCell(col);
+			}
 		return temp;
 	}
 	

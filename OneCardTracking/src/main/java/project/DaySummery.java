@@ -33,31 +33,26 @@ public class DaySummery implements Comparable<DaySummery>{
 	}
 
 	public int compareTo(DaySummery o) {
-		System.out.println("comp");
 		if(this.date.getYear() == o.date.getYear()) {
 			if(this.date.getMonthOfYear() == o.date.getMonthOfYear()) {
 				if(this.date.getDayOfMonth() == o.date.getDayOfMonth()) {
 					return 0;
-				} else if (this.date.getDayOfMonth() < o.date.getDayOfMonth()) {
-					return -1;
-				} else {
+				} else if (this.date.getDayOfMonth() > o.date.getDayOfMonth()) {
 					return 1;
+				} else {
+					return -1;
 				}
-				
-			} else if(this.date.getMonthOfYear() < o.date.getMonthOfYear()) {
-				return -1;
-			} else {
+			} else if (this.date.getMonthOfYear() > o.date.getMonthOfYear()) {
 				return 1;
+			} else {
+				return -1;
 			}
-		} else if (this.date.getYear() < o.date.getMonthOfYear()) {
-			return -1;
-		} else {
+		} else if (this.date.getYear() > o.date.getYear()) {
 			return 1;
+		} else {
+			return -1;
 		}
-		
-		
 		/*
-		
 		if(this.date.isBefore(o.date)) {
 			return -1;
 		}

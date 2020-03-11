@@ -16,7 +16,7 @@
 	    <artifactId>selenium-api</artifactId>
 	    <!-- <version>3.141.59</version> -->
 	    <!-- <version>3.3.1</version> -->
-	    <version>3.141.59</version> 
+	    <version>3.2.0</version> 
 	    <exclusions>
             <exclusion>
                 <groupId>org.seleniumhq.selenium</groupId>
@@ -37,9 +37,10 @@
 	<dependency>
 	    <groupId>org.seleniumhq.selenium</groupId>
 	    <artifactId>selenium-chrome-driver</artifactId>
+	    
 	    <!-- <version>3.141.59</version> -->
 	    <!-- <version>3.3.1</version> -->
-	    <version>3.141.59</version> 
+	    <version>3.2.0</version> 
 	</dependency>
 	
 
@@ -59,6 +60,13 @@
 	    <artifactId>joda-time</artifactId>
 	    <version>2.10.5</version>
 	</dependency>
+	
+	<dependency>
+	    <groupId>com.codeborne</groupId>
+	    <artifactId>phantomjsdriver</artifactId>
+	    <version>1.4.4</version>
+	</dependency>
+	
 	
 	
 
