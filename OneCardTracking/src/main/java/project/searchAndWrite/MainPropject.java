@@ -1,17 +1,24 @@
-package project;
+package project.searchAndWrite;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Scanner;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.swing.JOptionPane;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -49,67 +56,64 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
-import org.openqa.selenium.phantomjs.PhantomJSDriver;
 
+import project.DaySummery;
+import project.ExceptionDays;
+import project.Transaction;
+import project.config.ProperitesFile;
+import utils.EnviormentVariables;
+import utils.GetWebdriver;
 import utils.IDs;
 
-public class Main {
+public class MainPropject {
 	static LocalDate timeStart = LocalDate.parse("1900-01-01");
-	static LocalDate startingDate = LocalDate.parse("2020-01-19");
-	static LocalDate endingDate = LocalDate.parse("2020-05-28");
 	static LocalDate startingDateObj = LocalDate.now();
-	static Set<ExceptionDays> exceptionSet = new HashSet<ExceptionDays>();
 	
-	public static void main(String[] args) throws IOException {
-		exceptionSet.add(new ExceptionDays(LocalDate.parse("2020-04-07"), LocalDate.parse("2020-04-18")));//pesach
-		//exceptionSet.add(new ExceptionDays(LocalDate.parse("2020-04-25"), LocalDate.parse("2020-04-29")));//dummy
-		
-		Scanner sc = new Scanner(System.in);
-		System.out.println("password:");
-		//String password = sc.nextLine();
-		String password = "";
-		sc.close();
-		String path = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "windows" + File.separator;
-		System.setProperty("webdriver.chrome.driver", path + "chrome" + File.separator + "chromedriver80.exe");
-		System.setProperty("phantomjs.binary.path", path + "phantomjs.exe");
-		WebDriver driver = new PhantomJSDriver();
-		//WebDriver driver = new HtmlUnitDriver();
-		//WebDriver driver = new ChromeDriver();
-		driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+	public static void main() throws IOException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {		
+		WebDriver driver = GetWebdriver.getWebDriver();
+		try {
+			File configurationFile = new File(new EnviormentVariables().getVariable()+ File.separator + "configuration.properties");
+			ProperitesFile props = new ProperitesFile(configurationFile);
+			login(driver, props);
+			double currentDouble = getCurrentBalance(driver);
+			DaySummery[] summerAry = getAndReadAllTransactions(driver, props, currentDouble);
+			double origionalBalance = getOrigionalBalance(summerAry, currentDouble);
+			writeAllToExcel(props, origionalBalance, currentDouble, summerAry);
+		} catch (NoSuchElementException e) {
+			driver.quit();
+			e.printStackTrace();
+		}
+	}
+	
+	private static void login(WebDriver driver, ProperitesFile props) throws InvalidKeyException, UnsupportedEncodingException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
 		driver.get(IDs.logInURL);
-		driver.findElement(By.id(IDs.logIn_usernameID)).sendKeys("sgottes1");
-		driver.findElement(By.id(IDs.logIn_passwordID)).sendKeys(password);
+		driver.findElement(By.id(IDs.logIn_usernameID)).sendKeys(props.getUsername());
+		driver.findElement(By.id(IDs.logIn_passwordID)).sendKeys(props.decryptPassword());
 		driver.findElement(By.xpath(IDs.logIn_SubmitButton)).click();
-		
+	}
+	
+	private static double getCurrentBalance(WebDriver driver) {
 		driver.get(IDs.balancesURL);
 		String balance = driver.findElement(By.xpath(IDs.balancesTotal_XPath)).getText();
 		balance = balance.substring(7);
-		System.out.println("["+balance+"]");
-		double balanceDouble = Double.parseDouble(balance.replace("$", "").replace(",", ""));
-		
+		return Double.parseDouble(balance.replace("$", "").replace(",", ""));
+	}
+	
+	private static DaySummery[] getAndReadAllTransactions(WebDriver driver, ProperitesFile props, double currentBalance) {
 		driver.get(IDs.transactionURL);
+		LocalDate startingDate = props.getStartDate();
 		
-		WebElement startDate = driver.findElement(By.id(IDs.transactionStartID));
-		System.out.println("["+startDate.getText()+"]");
-		startDate.clear();
+		WebElement startDateInputField = driver.findElement(By.id(IDs.transactionStartID));
 		String startDateimput = startingDate.getMonthOfYear()+"/"+startingDate.getDayOfMonth()+"/"+startingDate.getYear(); 
-		startDate.sendKeys(startDateimput);
-		System.out.println("["+startDate.getText()+"]");
+		startDateInputField.clear();
+		startDateInputField.sendKeys(startDateimput);
 		
-		WebElement endDate = driver.findElement(By.id(IDs.transactionEndID));
-		System.out.println(endDate.getText());
-		endDate.clear();
-		
+		WebElement endDateInputField = driver.findElement(By.id(IDs.transactionEndID));
+		endDateInputField.clear();
 		String dateInput = startingDateObj.getMonthOfYear()+"/"+startingDateObj.getDayOfMonth()+"/"+startingDateObj.getYear();
-		endDate.sendKeys(dateInput);
+		endDateInputField.sendKeys(dateInput);
 		
-		System.out.println(driver.findElement(By.id(IDs.transactionSearchButtomID)).getAttribute("class"));
 		driver.findElement(By.id(IDs.transactionSearchButtomID)).click();
-		System.out.println(driver.getTitle());
-		
-		double balanceCopy = balanceDouble;
 		int x = 1;
 		ArrayList<Transaction> fullSummery = new ArrayList<Transaction>();
 		try {
@@ -120,20 +124,14 @@ public class Main {
 				DateTimeFormatter inputFormat = DateTimeFormat.forPattern("MM/dd/yyyy h:mm:ss a");
 				LocalDateTime date = LocalDateTime.parse(dateOrig, inputFormat);
 				Transaction trans = new Transaction(date, price);
-				balanceCopy -= price;
 				fullSummery.add(trans);
-				//DateTimeFormatter format = DateTimeFormatter.ISO_DATE_TIME;
-				//System.out.print(date.format(format));
-				//System.out.println("|"+ "amount: "+amount);
 				x++;
 			}
 		} catch(NoSuchElementException e) {
 			driver.quit();
 		}
-		System.out.println("orig value: " + balanceCopy);
-		System.out.println();
-		HashMap<LocalDate, DaySummery> dateset = new HashMap<LocalDate, DaySummery>();
 		
+		HashMap<LocalDate, DaySummery> dateset = new HashMap<LocalDate, DaySummery>();
 		for (Transaction trans : fullSummery) {
 			LocalDateTime ldt = trans.timeStamp;
 			LocalDate localDate = ldt.toLocalDate();
@@ -150,13 +148,19 @@ public class Main {
 		Collection<DaySummery> allDays = dateset.values();
 		DaySummery[] summeryAry = allDays.toArray(new DaySummery[0]);
 		Arrays.sort(summeryAry);
-		System.out.println("current blance: " + balanceDouble);
+		return summeryAry;
+	}
+	
+	private static double getOrigionalBalance(DaySummery[] summeryAry, double currentBalance) {
 		for(int y = 0; y < summeryAry.length; y++) {
-			System.out.println(summeryAry[y].date.toString() + "|" + summeryAry[y].summery());
-			balanceDouble -= summeryAry[y].summery();
+			currentBalance -= summeryAry[y].summery();
 		}
-		System.out.println("orig balance: " + balanceDouble);
-		
+		return currentBalance;
+	}
+	
+	private static void writeAllToExcel(ProperitesFile props, final double origionalBalance, final double currentBalance, DaySummery[] summeryAry) throws IOException {
+		LocalDate startingDate = props.getStartDate();
+		LocalDate endingDate = props.getEndDate();
 		Workbook wb = new XSSFWorkbook();
 		Sheet sheet = wb.createSheet();
 		Row header = getRow(sheet, 0);
@@ -181,8 +185,8 @@ public class Main {
 		Cell priceCellInfo = infoStart.createCell(1);
 		Cell balanceCellInfo = infoStart.createCell(2);
 		priceCellInfo.setCellValue(0);
-		balanceCellInfo.setCellValue(balanceDouble);
-		double balanceDoubleCopy = balanceDouble;
+		balanceCellInfo.setCellValue(origionalBalance);
+		double origionalBalanceCopy = origionalBalance;
 		/* write all transactions */
 		int y = 0;
 		for(y = 0; y < summeryAry.length; y++) {
@@ -195,28 +199,33 @@ public class Main {
 			dateCell.setCellStyle(dateStyle);
 			dateCell.setCellFormula(dateToDateFormula(date));
 			priceCell.setCellValue(summeryAry[y].summery());
-			balanceCell.setCellValue(balanceDouble+=summeryAry[y].summery());
+			balanceCell.setCellValue(origionalBalanceCopy+=summeryAry[y].summery());
 		}
 		/*write current date and balance */
 		getCell(getRow(sheet, y+2),0).setCellStyle(dateStyle);
 		getCell(getRow(sheet, y+2),0).setCellFormula(dateToDateFormula(LocalDate.now()));//set to today
 		getCell(getRow(sheet, y+2),1).setCellValue(0);
-		getCell(getRow(sheet, y+2),2).setCellValue(balanceDouble);
+		getCell(getRow(sheet, y+2),2).setCellValue(currentBalance);
 		
 		/*write origional base without exception days */
 		getCell(getRow(sheet, 1),4).setCellFormula(dateToDateFormula(startingDate)+"-1");
 		applyDateFormatting(sheet, 1, 4, dateStyle);
-		getCell(getRow(sheet, 1),5).setCellValue(balanceDoubleCopy);
+		getCell(getRow(sheet, 1),5).setCellValue(origionalBalance);
 		getCell(getRow(sheet, 1),6).setCellFormula("E3-E2");//total day range
 		getCell(getRow(sheet, 2),4).setCellFormula(dateToDateFormula(endingDate));
 		applyDateFormatting(sheet, 2, 4, dateStyle);
 		getCell(getRow(sheet, 2),5).setCellValue(0);
 		
+		ExceptionDays[] exceptionDayAry = props.getAllExceptionDays();
+		Set<ExceptionDays> exceptionDaysSet = new HashSet<ExceptionDays>();
+		for(int x = 0; x < exceptionDayAry.length; x++) {
+			exceptionDaysSet.add(exceptionDayAry[x]);
+		}
 		/*write all exception days*/
-		exceptionSet = verifyRanges(exceptionSet);
-		ExceptionDays[] exceptionDaysRange = exceptionSet.toArray(new ExceptionDays[0]);
+		exceptionDaysSet = verifyRanges(exceptionDaysSet);
+		ExceptionDays[] exceptionDaysRange = exceptionDaysSet.toArray(new ExceptionDays[0]);
 		Arrays.sort(exceptionDaysRange);
-		for (x = 0; x < exceptionDaysRange.length; x++) {
+		for (int x = 0; x < exceptionDaysRange.length; x++) {
 			Row row = getRow(sheet, x+1);
 			ExceptionDays ed = exceptionDaysRange[x];
 			row.createCell(8).setCellFormula(dateToDateFormula(ed.startDate));
@@ -240,8 +249,8 @@ public class Main {
 		
 		getRow(sheet, 9).createCell(4).setCellFormula(dateToDateFormula(startingDate)+"-1");
 		applyDateFormatting(sheet, 9, 4, dateStyle);
-		getRow(sheet, 9).createCell(5).setCellValue(balanceDoubleCopy);
-		for (x = 0; x < exceptionDaysRange.length; x++) {
+		getRow(sheet, 9).createCell(5).setCellValue(origionalBalance);
+		for (int x = 0; x < exceptionDaysRange.length; x++) {
 			int rowNumForStartOfInfo = 10+(2*x);
 			ExceptionDays exc = exceptionDaysRange[x];
 			getRow(sheet, rowNumForStartOfInfo).createCell(4).setCellFormula(dateToDateFormula(exc.startDate));
@@ -267,8 +276,6 @@ public class Main {
         
         bottomAxis.setMinimum(Days.daysBetween(timeStart, startingDate).getDays());
         bottomAxis.setMaximum(Days.daysBetween(timeStart, endingDate).getDays() + 1);
-        System.out.println(Days.daysBetween(timeStart, startingDate).getDays() - 1);
-        System.out.println(Days.daysBetween(timeStart, endingDate).getDays() + 1);
         bottomAxis.setTitle("Date"); // https://stackoverflow.com/questions/32010765
         XDDFValueAxis leftAxis = chart.createValueAxis(AxisPosition.LEFT);
         leftAxis.setTitle("Balance");
@@ -292,21 +299,20 @@ public class Main {
         solidLineSeries(data, 0, PresetColor.ORANGE);
         solidLineSeries(data, 1, PresetColor.DARK_BLUE);
 		
-		
-		
-		File currDir = new File(".");
-		String path2 = currDir.getAbsolutePath();
-		String fileLocation = path2.substring(0, path2.length() - 1) + "temp.xlsx";
-		 
-		FileOutputStream outputStream = new FileOutputStream(fileLocation);
-		wb.write(outputStream);
+		String path = new EnviormentVariables().getVariable() + File.separator + "Output.xlsx";	
+		FileOutputStream outputStream = new FileOutputStream(path);
+		try {
+			wb.write(outputStream);
+		} catch (IOException e) {
+			if (System.console() == null) {
+				JOptionPane.showMessageDialog(null, "Could not write to output file " + path +". is it already open by a system viewer/editor?", "Error", JOptionPane.ERROR_MESSAGE);
+				System.exit(1);
+			}
+		}
 		wb.close();
-		
-		
-		
-		
-		
+		Desktop.getDesktop().open(new File(path));
 	}
+	
 	 private static void solidLineSeries(XDDFChartData data, int index, PresetColor color) {
 	        XDDFSolidFillProperties fill = new XDDFSolidFillProperties(XDDFColor.from(color));
 	        XDDFLineProperties line = new XDDFLineProperties();

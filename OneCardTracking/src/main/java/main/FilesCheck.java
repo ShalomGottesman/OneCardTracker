@@ -4,22 +4,27 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
 
 import project.config.ProperitesFile;
 import utils.EnviormentVariables;
 import utils.OS;
 
-public class PreCheck {
+public class FilesCheck {
 	public static void main(String[] args) throws IOException {
 		//first check the config file
 		EnviormentVariables env = new EnviormentVariables();
+		File storageLocation = new File(env.getVariable()+ File.separator);
+		storageLocation.mkdirs();
 		File configurationFile = new File(env.getVariable()+ File.separator + "configuration.properties");
 		ProperitesFile props = null;
 		if (!configurationFile.exists()) {
 			configurationFile.createNewFile();
 			props = new ProperitesFile(configurationFile);
 			props.setDefaultValues();
+		} else {
+			props = new ProperitesFile(configurationFile);
 		}
 		if(props.getUsername() == null) {
 			props.setUsername("");
@@ -34,17 +39,16 @@ public class PreCheck {
 		String driverName = getDriverName();
 		File driverFile = new File(env.getVariable()+ File.separator + driverName);
 		if(!driverFile.exists()) { 
-			if (PreCheck.class.getResource("PreCheck.class").toString().contains("jar")) { //extract driver from jar file
+			URL classResource = FilesCheck.class.getResource("PreCheck.class");
+			if (classResource != null && classResource.toString().contains("jar")) { //extract driver from jar file
 				String inPath = "/resources/" + getResourceSubFolder() + "/" + getDriverName();
-				InputStream in = PreCheck.class.getResourceAsStream(inPath);
+				InputStream in = FilesCheck.class.getResourceAsStream(inPath);
 				Files.copy(in, driverFile.toPath());
-			} else {//we are running from CLI, copy file directly
+			} else {//we are running from .class files, copy file directly
 				File driver = getDriverLocation();
 				Files.copy(driver.toPath(), new FileOutputStream(driverFile));
 			}
-		} else {
-			return;
-		}
+		} 
 	}
 	
 	private static String getDriverName() {

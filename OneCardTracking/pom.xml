@@ -1,49 +1,362 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>OneCardTracking</groupId>
-  <artifactId>OneCardTracking</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <groupId>OneCardTracker</groupId>
+  <artifactId>OneCardTracker</artifactId>
+  <version>1.0</version>
+  
+  <profiles>
+  	<profile>
+  		<id>Windows</id>
+  		<activation>
+  			<os>
+  				<family>Windows</family>
+  			</os>
+  		</activation>
+  		<build>
+		<finalName>${my.baseJarFileName}</finalName>
+
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<excludes>
+					<exclude>**/*chromedriver*.*</exclude>
+					<exclude>linux/phantomjs</exclude>
+					<exclude>mac/phantomjs</exclude>
+				</excludes>
+			</resource>
+		</resources>
+		
+		<plugins>
+			<!-- download source code in Eclipse, best practice -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-eclipse-plugin</artifactId>
+				<version>2.10</version>
+				<configuration>
+					<downloadSources>true</downloadSources>
+					<downloadJavadocs>false</downloadJavadocs>
+				</configuration>
+			</plugin>
+			
+			<!-- Set a JDK compiler level -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.8.1</version>
+				<configuration>
+					<source>${maven.compiler.source}</source>
+					<target>${maven.compiler.target}</target>
+				</configuration>
+			</plugin>			
+			<!-- Make this jar executable -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.2.0</version>
+				<configuration>
+					<outputDirectory>${outputDirectory}</outputDirectory>					
+					<archive>
+						<manifest>
+							<!-- Jar file entry point -->
+							<mainClass>main.MainSetup</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
+			
+			<!-- Includes the runtime dependencies -->
+			<plugin>
+				<groupId>com.jolira</groupId>
+				<artifactId>onejar-maven-plugin</artifactId>
+				<version>1.4.4</version>
+				<configuration>
+					<outputDirectory>${outputDirectory}</outputDirectory>
+					<mainJarFilename>${my.baseJarFileName}.jar</mainJarFilename>
+					<filename>${my.endAppName}.jar</filename>
+				</configuration>
+				<executions>
+				  <execution>
+					<goals>
+						<goal>one-jar</goal>
+					</goals>
+				  </execution>
+				</executions>
+			</plugin>
+			
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.8</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<target>
+								<delete>
+									<fileset file="${outputDirectory}/${my.baseJarFileName}.jar"/>
+								</delete>
+							</target>
+						</configuration>
+					</execution>
+				</executions>
+				</plugin>
+			</plugins>
+		</build>
+				<!-- One-Jar is in the googlecode repository -->
+		<pluginRepositories>
+			<pluginRepository>
+				<id>onejar-maven-plugin.googlecode.com</id>
+				<url>http://onejar-maven-plugin.googlecode.com/svn/mavenrepo</url>
+			</pluginRepository>
+		</pluginRepositories>
+  	</profile>
+  	
+  	<profile>
+  		<id>mac</id>
+  		<activation>
+  			<os>
+  				<family>mac</family>
+  			</os>
+  		</activation>
+  		<build>
+		<finalName>${my.baseJarFileName}</finalName>
+
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<excludes>
+					<exclude>**/*chromedriver*.*</exclude>
+					<exclude>linux/phantomjs</exclude>
+					<exclude>windows/phantomjs.exe</exclude>
+				</excludes>
+			</resource>
+		</resources>
+		
+		<plugins>
+			<!-- download source code in Eclipse, best practice -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-eclipse-plugin</artifactId>
+				<version>2.10</version>
+				<configuration>
+					<downloadSources>true</downloadSources>
+					<downloadJavadocs>false</downloadJavadocs>
+				</configuration>
+			</plugin>
+			
+			<!-- Set a JDK compiler level -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.8.1</version>
+				<configuration>
+					<source>${maven.compiler.source}</source>
+					<target>${maven.compiler.target}</target>
+				</configuration>
+			</plugin>			
+			<!-- Make this jar executable -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.2.0</version>
+				<configuration>
+					<outputDirectory>${outputDirectory}</outputDirectory>					
+					<archive>
+						<manifest>
+							<!-- Jar file entry point -->
+							<mainClass>main.MainSetup</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
+			
+			<!-- Includes the runtime dependencies -->
+			<plugin>
+				<groupId>com.jolira</groupId>
+				<artifactId>onejar-maven-plugin</artifactId>
+				<version>1.4.4</version>
+				<configuration>
+					<outputDirectory>${outputDirectory}</outputDirectory>
+					<mainJarFilename>${my.baseJarFileName}.jar</mainJarFilename>
+					<filename>${my.endAppName}.jar</filename>
+				</configuration>
+				<executions>
+				  <execution>
+					<goals>
+						<goal>one-jar</goal>
+					</goals>
+				  </execution>
+				</executions>
+			</plugin>
+			
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.8</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<target>
+								<delete>
+									<fileset file="${outputDirectory}/${my.baseJarFileName}.jar"/>
+								</delete>
+							</target>
+						</configuration>
+					</execution>
+				</executions>
+				</plugin>
+			</plugins>
+		</build>
+				<!-- One-Jar is in the googlecode repository -->
+		<pluginRepositories>
+			<pluginRepository>
+				<id>onejar-maven-plugin.googlecode.com</id>
+				<url>http://onejar-maven-plugin.googlecode.com/svn/mavenrepo</url>
+			</pluginRepository>
+		</pluginRepositories>
+  	</profile>
+  	
+  	<profile>
+  		<id>unix</id>
+  		<activation>
+  			<os>
+  				<family>unix</family>
+  			</os>
+  		</activation>
+  		<build>
+		<finalName>${my.baseJarFileName}</finalName>
+
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<excludes>
+					<exclude>**/*chromedriver*.*</exclude>
+					<exclude>mac/phantomjs</exclude>
+					<exclude>windows/phantomjs.exe</exclude>
+				</excludes>
+			</resource>
+		</resources>
+		
+		<plugins>
+			<!-- download source code in Eclipse, best practice -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-eclipse-plugin</artifactId>
+				<version>2.10</version>
+				<configuration>
+					<downloadSources>true</downloadSources>
+					<downloadJavadocs>false</downloadJavadocs>
+				</configuration>
+			</plugin>
+			
+			<!-- Set a JDK compiler level -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.8.1</version>
+				<configuration>
+					<source>${maven.compiler.source}</source>
+					<target>${maven.compiler.target}</target>
+				</configuration>
+			</plugin>			
+			<!-- Make this jar executable -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.2.0</version>
+				<configuration>
+					<outputDirectory>${outputDirectory}</outputDirectory>					
+					<archive>
+						<manifest>
+							<!-- Jar file entry point -->
+							<mainClass>main.MainSetup</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
+			
+			<!-- Includes the runtime dependencies -->
+			<plugin>
+				<groupId>com.jolira</groupId>
+				<artifactId>onejar-maven-plugin</artifactId>
+				<version>1.4.4</version>
+				<configuration>
+					<outputDirectory>${outputDirectory}</outputDirectory>
+					<mainJarFilename>${my.baseJarFileName}.jar</mainJarFilename>
+					<filename>${my.endAppName}.jar</filename>
+				</configuration>
+				<executions>
+				  <execution>
+					<goals>
+						<goal>one-jar</goal>
+					</goals>
+				  </execution>
+				</executions>
+			</plugin>
+			
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.8</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<target>
+								<delete>
+									<fileset file="${outputDirectory}/${my.baseJarFileName}.jar"/>
+								</delete>
+							</target>
+						</configuration>
+					</execution>
+				</executions>
+				</plugin>
+			</plugins>
+		</build>
+		<!-- One-Jar is in the googlecode repository -->
+		<pluginRepositories>
+			<pluginRepository>
+				<id>onejar-maven-plugin.googlecode.com</id>
+				<url>http://onejar-maven-plugin.googlecode.com/svn/mavenrepo</url>
+			</pluginRepository>
+		</pluginRepositories>
+  	</profile>
+  </profiles>
+  <!-- Output to jar format -->
+  <packaging>jar</packaging>
   
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
+    <outputDirectory>${project.build.directory}</outputDirectory>
+    <my.baseJarFileName>temp</my.baseJarFileName> <!-- objective name for temporary file to be deleted later -->
+    <my.endAppName>OneCardTracker</my.endAppName> <!-- do not include ".jar" in this name! it will be added later -->
   </properties>
   
   <dependencies>
   	<dependency>
 	    <groupId>org.seleniumhq.selenium</groupId>
 	    <artifactId>selenium-api</artifactId>
-	    <!-- <version>3.141.59</version> -->
-	    <!-- <version>3.3.1</version> -->
-	    <version>3.2.0</version> 
+	    <version>3.8.1</version> 
 	    <exclusions>
             <exclusion>
                 <groupId>org.seleniumhq.selenium</groupId>
                 <artifactId>htmlunit-driver</artifactId>
             </exclusion>
         </exclusions>
-        
-	</dependency>
-	
-	<!-- https://mvnrepository.com/artifact/org.seleniumhq.selenium/selenium-htmlunit-driver -->
-	<dependency>
-	    <groupId>org.seleniumhq.selenium</groupId>
-	    <artifactId>selenium-htmlunit-driver</artifactId>
-	    <version>2.52.0</version> 
-	</dependency>
-	
-	 
-	<dependency>
-	    <groupId>org.seleniumhq.selenium</groupId>
-	    <artifactId>selenium-chrome-driver</artifactId>
-	    
-	    <!-- <version>3.141.59</version> -->
-	    <!-- <version>3.3.1</version> -->
-	    <version>3.2.0</version> 
-	</dependency>
-	
 
+	</dependency>
 	<dependency>
 	    <groupId>org.apache.poi</groupId>
 	    <artifactId>poi</artifactId>
@@ -66,12 +379,6 @@
 	    <artifactId>phantomjsdriver</artifactId>
 	    <version>1.4.4</version>
 	</dependency>
-	
-	
-	
-
-	
-  	
   </dependencies>
   
 </project>

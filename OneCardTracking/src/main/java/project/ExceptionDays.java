@@ -4,10 +4,10 @@ import org.joda.time.Days;
 import org.joda.time.LocalDate;
 
 public class ExceptionDays implements Comparable<ExceptionDays>{
-	LocalDate startDate;
-	LocalDate endDate;
+	public LocalDate startDate;
+	public LocalDate endDate;
 	
-	ExceptionDays(LocalDate localDate, LocalDate localDate2){
+	public ExceptionDays(LocalDate localDate, LocalDate localDate2){
 		this.startDate = localDate;
 		this.endDate = localDate2;
 		if(localDate.isAfter(localDate2)) {
@@ -31,5 +31,8 @@ public class ExceptionDays implements Comparable<ExceptionDays>{
 		}
 		throw new IllegalStateException();
 	}
-
+	
+	public String toString() {
+		return this.startDate.toString()+"/"+this.endDate.toString();
+	}
 }

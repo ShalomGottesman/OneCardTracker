@@ -22,4 +22,11 @@ public class IDs {
 	public static String transactionSearchButtonXPath = "//*[@id=\"trans_search\"]/span[1]";
 	public static String transactionSearchButtomID = "trans_search";
 	
+	public static String configurationOptions = 
+			"Options : -u       ->Set Username\n" +
+			"          -p       ->Set Password\n" +
+			"          -a       ->Add Exception Days\n" +
+			"          -r       ->Remove Exception Days\n"+
+			"          -e       ->Return from configuration dialog";
+	
 }

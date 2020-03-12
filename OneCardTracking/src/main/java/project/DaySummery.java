@@ -7,10 +7,10 @@ import java.util.ArrayList;
 import org.joda.time.LocalDate;
 
 public class DaySummery implements Comparable<DaySummery>{
-	ArrayList<Transaction> transactions;
-	LocalDate date;
+	public ArrayList<Transaction> transactions;
+	public LocalDate date;
 	
-	DaySummery(LocalDate date){
+	public DaySummery(LocalDate date){
 		this.date = date;
 		this.transactions = new ArrayList<Transaction>();
 	}
