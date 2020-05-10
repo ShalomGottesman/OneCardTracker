@@ -291,9 +291,11 @@ public class MainPropject {
         XDDFScatterChartData data = (XDDFScatterChartData) chart.createData(ChartTypes.SCATTER, bottomAxis, leftAxis);
         XDDFScatterChartData.Series series1 = (XDDFScatterChartData.Series) data.addSeries(xs1, ys1);
         series1.setTitle("Current Balance", null); // https://stackoverflow.com/questions/21855842
-        series1.setSmooth(true); // https://stackoverflow.com/questions/39636138
+        //this used to be set to true, I am not sure why
+        series1.setSmooth(false); // https://stackoverflow.com/questions/39636138
         XDDFScatterChartData.Series series2 = (XDDFScatterChartData.Series) data.addSeries(xs2, ys2);
         series2.setTitle("BaseLine", null);
+        series2.setSmooth(false);
         chart.plot(data);
 
         solidLineSeries(data, 0, PresetColor.ORANGE);
