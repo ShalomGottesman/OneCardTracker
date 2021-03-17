@@ -45,6 +45,7 @@ import org.apache.poi.xddf.usermodel.chart.XDDFValueAxis;
 import org.apache.poi.xssf.usermodel.XSSFChart;
 import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
 import org.apache.poi.xssf.usermodel.XSSFDrawing;
+import org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.joda.time.Days;
@@ -68,6 +69,8 @@ import utils.IDs;
 public class MainPropject {
 	static LocalDate timeStart = LocalDate.parse("1900-01-01");
 	static LocalDate startingDateObj = LocalDate.now();
+	
+	
 	
 	public static void main() throws IOException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {		
 		WebDriver driver = GetWebdriver.getWebDriver();
@@ -123,6 +126,7 @@ public class MainPropject {
 				double price = Double.parseDouble(amount.replace("$", ""));
 				DateTimeFormatter inputFormat = DateTimeFormat.forPattern("MM/dd/yyyy h:mm:ss a");
 				LocalDateTime date = LocalDateTime.parse(dateOrig, inputFormat);
+				System.out.println("Transaction["+x+"] at [" + date.toString() + "] : " + amount);
 				Transaction trans = new Transaction(date, price);
 				fullSummery.add(trans);
 				x++;
@@ -178,16 +182,19 @@ public class MainPropject {
 		CellStyle dateStyle = wb.createCellStyle();
 		dateStyle.setDataFormat(wb.createDataFormat().getFormat("mm/dd/yy"));
 		/*set starting info */
+		System.out.println("Writing starting info");
 		Row infoStart = getRow(sheet, 1);
 		Cell cell = infoStart.createCell(0);
 		cell.setCellStyle(dateStyle);
-		cell.setCellFormula(dateToDateFormula(startingDate)+"-1");
+		cell.setCellValue(convertJodatimeLocalDate(startingDate.minusDays(1)));
 		Cell priceCellInfo = infoStart.createCell(1);
 		Cell balanceCellInfo = infoStart.createCell(2);
 		priceCellInfo.setCellValue(0);
 		balanceCellInfo.setCellValue(origionalBalance);
 		double origionalBalanceCopy = origionalBalance;
+		
 		/* write all transactions */
+		System.out.println("Write all transactions");
 		int y = 0;
 		for(y = 0; y < summeryAry.length; y++) {
 			Row row = getRow(sheet, y+2);
@@ -197,22 +204,24 @@ public class MainPropject {
 			Cell balanceCell = row.createCell(2);
 			LocalDate date = summeryAry[y].date;
 			dateCell.setCellStyle(dateStyle);
-			dateCell.setCellFormula(dateToDateFormula(date));
+			dateCell.setCellValue(convertJodatimeLocalDate(date));
 			priceCell.setCellValue(summeryAry[y].summery());
 			balanceCell.setCellValue(origionalBalanceCopy+=summeryAry[y].summery());
 		}
 		/*write current date and balance */
+		System.out.println("Write current date and balance");
 		getCell(getRow(sheet, y+2),0).setCellStyle(dateStyle);
-		getCell(getRow(sheet, y+2),0).setCellFormula(dateToDateFormula(LocalDate.now()));//set to today
+		getCell(getRow(sheet, y+2),0).setCellValue(convertJodatimeLocalDate(LocalDate.now()));//set to today
 		getCell(getRow(sheet, y+2),1).setCellValue(0);
 		getCell(getRow(sheet, y+2),2).setCellValue(currentBalance);
 		
 		/*write origional base without exception days */
-		getCell(getRow(sheet, 1),4).setCellFormula(dateToDateFormula(startingDate)+"-1");
+		System.out.println("Write origional base w/o exception days");
+		getCell(getRow(sheet, 1),4).setCellValue(convertJodatimeLocalDate(startingDate.minusDays(1)));
 		applyDateFormatting(sheet, 1, 4, dateStyle);
 		getCell(getRow(sheet, 1),5).setCellValue(origionalBalance);
-		getCell(getRow(sheet, 1),6).setCellFormula("E3-E2");//total day range
-		getCell(getRow(sheet, 2),4).setCellFormula(dateToDateFormula(endingDate));
+		getCell(getRow(sheet, 1),6).setCellValue(Days.daysBetween(startingDate, endingDate).getDays());//total day range
+		getCell(getRow(sheet, 2),4).setCellValue(convertJodatimeLocalDate(endingDate));
 		applyDateFormatting(sheet, 2, 4, dateStyle);
 		getCell(getRow(sheet, 2),5).setCellValue(0);
 		
@@ -222,51 +231,60 @@ public class MainPropject {
 			exceptionDaysSet.add(exceptionDayAry[x]);
 		}
 		/*write all exception days*/
+		System.out.println("Write all exception days");
 		exceptionDaysSet = verifyRanges(exceptionDaysSet);
 		ExceptionDays[] exceptionDaysRange = exceptionDaysSet.toArray(new ExceptionDays[0]);
 		Arrays.sort(exceptionDaysRange);
+		int totalExceptionDays = 0;
 		for (int x = 0; x < exceptionDaysRange.length; x++) {
 			Row row = getRow(sheet, x+1);
 			ExceptionDays ed = exceptionDaysRange[x];
-			row.createCell(8).setCellFormula(dateToDateFormula(ed.startDate));
+			row.createCell(8).setCellValue(convertJodatimeLocalDate(ed.startDate));
 			applyDateFormatting(sheet, x+1, 8, dateStyle);
-			row.createCell(9).setCellFormula(dateToDateFormula(ed.endDate));
+			row.createCell(9).setCellValue(convertJodatimeLocalDate(ed.endDate));
 			applyDateFormatting(sheet, x+1, 9, dateStyle);
-			row.createCell(10).setCellFormula("J"+(x+2)+"-I"+(x+2));
+			int exceptionDayRamge = Days.daysBetween(ed.startDate, ed.endDate).getDays();
+			row.createCell(10).setCellValue(exceptionDayRamge);
+			totalExceptionDays += exceptionDayRamge;
 		}
-		getRow(sheet, 1).createCell(12).setCellFormula("SUM(K2:K"+ (2+exceptionDaysRange.length)+")");
+		getRow(sheet, 1).createCell(12).setCellValue(totalExceptionDays);
 		
 		/*calculate average spending allowance with exception days */
+		System.out.println("Recalculate daily spending with exception days");
 		getCell(getRow(sheet, 4), 4).setCellValue("Total Days");
 		getCell(getRow(sheet, 4), 5).setCellValue("Average Allowance");
-		getCell(getRow(sheet, 5), 4).setCellFormula("G2-M2");
-		getCell(getRow(sheet, 5), 5).setCellFormula("F2/E6");
+		double totalDayRangeCount = getCell(getRow(sheet, 1), 6).getNumericCellValue(); 
+		double totalExceptionDayCount = getCell(getRow(sheet, 1), 12).getNumericCellValue(); 
+		getCell(getRow(sheet, 5), 4).setCellValue(totalDayRangeCount - totalExceptionDayCount);
+		double baseBalance = getCell(getRow(sheet, 1), 5).getNumericCellValue(); 
+		getCell(getRow(sheet, 5), 5).setCellValue(baseBalance / (totalDayRangeCount - totalExceptionDayCount));
 		
 		/*recalculate baseline with exception days*/
+		System.out.println("Recalculate exception day baseline");
 		getCell(getRow(sheet, 7), 4).setCellValue("Augmented Base");
 		getCell(getRow(sheet, 8), 4).setCellValue("Date");
 		getCell(getRow(sheet, 8), 5).setCellValue("Balance");
 		
-		getRow(sheet, 9).createCell(4).setCellFormula(dateToDateFormula(startingDate)+"-1");
+		getRow(sheet, 9).createCell(4).setCellValue(convertJodatimeLocalDate(startingDate.minusDays(1)));
 		applyDateFormatting(sheet, 9, 4, dateStyle);
 		getRow(sheet, 9).createCell(5).setCellValue(origionalBalance);
 		for (int x = 0; x < exceptionDaysRange.length; x++) {
 			int rowNumForStartOfInfo = 10+(2*x);
 			ExceptionDays exc = exceptionDaysRange[x];
-			getRow(sheet, rowNumForStartOfInfo).createCell(4).setCellFormula(dateToDateFormula(exc.startDate));
+			getRow(sheet, rowNumForStartOfInfo).createCell(4).setCellValue(convertJodatimeLocalDate(exc.startDate));
 			applyDateFormatting(sheet, rowNumForStartOfInfo, 4, dateStyle);
 			getRow(sheet, rowNumForStartOfInfo).createCell(5).setCellFormula("F"+(rowNumForStartOfInfo)+"-(F6*(E"+(rowNumForStartOfInfo+1)+"-E"+(rowNumForStartOfInfo)+"))");
 			
-			getRow(sheet, rowNumForStartOfInfo+1).createCell(4).setCellFormula(dateToDateFormula(exc.endDate));
+			getRow(sheet, rowNumForStartOfInfo+1).createCell(4).setCellValue(convertJodatimeLocalDate(exc.endDate));
 			applyDateFormatting(sheet, rowNumForStartOfInfo+1, 4, dateStyle);
 			getRow(sheet, rowNumForStartOfInfo+1).createCell(5).setCellFormula("F"+(rowNumForStartOfInfo+1));
 		}
-		getRow(sheet, 9+(2*exceptionDaysRange.length)+1).createCell(4).setCellFormula(dateToDateFormula(endingDate));
+		getRow(sheet, 9+(2*exceptionDaysRange.length)+1).createCell(4).setCellValue(convertJodatimeLocalDate(endingDate));
 		applyDateFormatting(sheet, 9+(2*exceptionDaysRange.length)+1, 4, dateStyle);
 		getRow(sheet, 9+(2*exceptionDaysRange.length)+1).createCell(5).setCellValue(0);
 		
 		
-		
+		System.out.println("Commit drawing");
 		XSSFDrawing drawing = (XSSFDrawing) sheet.createDrawingPatriarch();
         XSSFClientAnchor anchor = drawing.createAnchor(0, 0, 0, 0, 8, 6+(2*exceptionDaysRange.length), 15, 26+(2*exceptionDaysRange.length));
         XSSFChart chart = drawing.createChart(anchor);
@@ -299,8 +317,9 @@ public class MainPropject {
         chart.plot(data);
 
         solidLineSeries(data, 0, PresetColor.ORANGE);
-        solidLineSeries(data, 1, PresetColor.DARK_BLUE);
+        solidLineSeries(data, 1, PresetColor.DARK_BLUE); 
 		
+		System.out.println("Write file to disk");
 		String path = new EnviormentVariables().getVariable() + File.separator + "Output.xlsx";	
 		FileOutputStream outputStream = new FileOutputStream(path);
 		try {
@@ -316,20 +335,24 @@ public class MainPropject {
 	}
 	
 	 private static void solidLineSeries(XDDFChartData data, int index, PresetColor color) {
-	        XDDFSolidFillProperties fill = new XDDFSolidFillProperties(XDDFColor.from(color));
-	        XDDFLineProperties line = new XDDFLineProperties();
-	        line.setFillProperties(fill);
-	        XDDFChartData.Series series = data.getSeries().get(index);
-	        XDDFShapeProperties properties = series.getShapeProperties();
-	        if (properties == null) {
-	            properties = new XDDFShapeProperties();
-	        }
-	        properties.setLineProperties(line);
-	        series.setShapeProperties(properties);
-	    }
-	
+        XDDFSolidFillProperties fill = new XDDFSolidFillProperties(XDDFColor.from(color));
+        XDDFLineProperties line = new XDDFLineProperties();
+        line.setFillProperties(fill);
+        XDDFChartData.Series series = data.getSeries().get(index);
+        XDDFShapeProperties properties = series.getShapeProperties();
+        if (properties == null) {
+            properties = new XDDFShapeProperties();
+        }
+        properties.setLineProperties(line);
+        series.setShapeProperties(properties);
+	}
+	/*
 	private static String dateToDateFormula(LocalDate date) {
 		return "DATE("+date.getYear()+", "+date.getMonthOfYear()+", "+date.getDayOfMonth()+")";
+	}
+	*/
+	private static java.time.LocalDate convertJodatimeLocalDate(LocalDate date){
+		return java.time.LocalDate.of(date.getYear(), date.getMonthOfYear(), date.getDayOfMonth());
 	}
 	
 	private static void applyDateFormatting(Sheet sheet, int row, int column, CellStyle dateStyle) {
@@ -372,5 +395,4 @@ public class MainPropject {
 		}
 		return set;
 	}
-
 }

@@ -24,7 +24,7 @@ public class MainSetup {
 		MinimumInformationCheck.main(sc);
 		System.out.println("Minimum information check complete");
 		if(new InternetConnection(new URL(IDs.logInURL)).isConnectionAvailable()) {
-			System.out.println("internet conection available");
+			System.out.println("Internet conection available");
 		} else {
 			System.out.println("Could not connect to onecard website, are you connected to the internet?");
 			System.exit(1);
